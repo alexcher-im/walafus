@@ -1,6 +1,7 @@
 #include <queue>
 #include <stack>
 #include <random>
+#include <algorithm>
 #include "../include/walafus/wltg_packer.h"
 #include "wltg_structure.h"
 #include "wltg_internal_writers.h"
@@ -56,10 +57,20 @@ void WltgPacker::index_real_dir(WltgPackerNode* virtual_location, const std::fil
     }
 }
 
-void WltgPacker::write_fs_blob(const char* real_path, int compression_level, ubyte encryption_key[32]) {
+void WltgPacker::write_fs_blob(const char* real_path, int compression_level, ubyte encryption_key[32], bool prefer_min_size) {
     std::ofstream dst_fp(real_path, std::ios::binary);
 
     auto nodes = get_nodes_list();
+
+    if (prefer_min_size) {
+        std::sort(nodes.begin(), nodes.end(), [](const WltgPackerNode* a, const WltgPackerNode* b) {
+            auto a_sep_index = a->name.find('.');
+            auto b_sep_index = b->name.find('.');
+            a_sep_index = a_sep_index == std::string::npos ? 0 : a_sep_index;
+            b_sep_index = b_sep_index == std::string::npos ? 0 : b_sep_index;
+            return a->name.substr(a_sep_index) < b->name.substr(b_sep_index);
+        });
+    }
 
     // strings
     std::unordered_map<std::string_view, uint> string_offsets;
@@ -199,7 +210,7 @@ void WltgPacker::write_fs_blob(const char* real_path, int compression_level, uby
     // writing: compression offsets
     if (compression_level) {
         if (compression_stream->write_counts.size() != block_count - 1) {
-            std::cout << "error writing file: amount of written blocks does not match amount of predicted blocks" << std::endl;
+            std::cout << "error writing file: amount of written blocks does not match amount of blocks predicted" << std::endl;
             return;
         }
 
@@ -260,15 +271,15 @@ std::vector<WltgPackerNode*> WltgPacker::get_nodes_list() {
     return nodes_list;*/
 }
 
-void WltgPacker::write_fs_blob(const char* real_path, int compression_level, const char* password) {
+void WltgPacker::write_fs_blob(const char* real_path, int compression_level, const char* password, bool prefer_min_size) {
     if (password) {
         ubyte encryption_key[32];
         hash_password(password, encryption_key);
-        write_fs_blob(real_path, compression_level, encryption_key);
+        write_fs_blob(real_path, compression_level, encryption_key, prefer_min_size);
         std::cout << "dec key: " << (int) encryption_key[0] << " " << (int) encryption_key[1] << std::endl;
         secure_zero_mem(encryption_key, sizeof(encryption_key));
     }
     else {
-        write_fs_blob(real_path, compression_level, (ubyte*) nullptr);
+        write_fs_blob(real_path, compression_level, (ubyte*) nullptr, prefer_min_size);
     }
 }

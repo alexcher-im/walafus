@@ -25,7 +25,7 @@ struct Inode
 {
     uint string_name; // offset in string pool to null-terminated string
     uint next_node_id; // next node index or -1 (0xFFFFFFFF)
-    uint child_node_id; // node id or -2 (0xFFFFFFFF)
+    uint child_node_id; // node id or -1 (0xFFFFFFFF)
     ulong data_size;
     fileptr file_data; // file ptr if data exists or -1
 };
