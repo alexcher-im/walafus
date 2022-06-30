@@ -77,9 +77,9 @@ void main() {
     // if virtual paths interleave, the last indexed is recorded
     packer.index_real_dir("/example", "/home/example");
     
-    // packing (real filename, ZSTD compression level (from 1 to 22 inclusive), password)
+    // packing (real filename, ZSTD compression level (from 1 to 22 inclusive), password, is compact layout)
     // a specific encryption key can also be specified by passing ubyte[32] instead of const char*
-    packer.write_fs_blob("pack.wltg", 11, "password");
+    packer.write_fs_blob("pack.wltg", 11, "password", true);
 }
 ```
 
